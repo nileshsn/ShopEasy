@@ -8,7 +8,9 @@ A modern, full-featured e-commerce platform built with Next.js 16, Supabase, and
 - **User Authentication**: Secure signup/login with Supabase Auth
 - **Shopping Cart**: Add, update, and remove items with real-time sync
 - **Checkout System**: Complete order placement with shipping details
-- **Order Management**: View order history and track status
+- **User Profile**: Comprehensive account management with personal information, addresses, and security settings
+- **Order Management**: View order history, track status, and manage past purchases
+- **Order Tracking**: Real-time order status updates with visual timeline
 - **Newsletter**: Subscribe to exclusive offers
 - **Responsive Design**: Mobile-first design with Tailwind CSS
 - **Server-Side Rendering**: Fast page loads with Next.js 16
@@ -57,6 +59,27 @@ npm run dev
 Open [http://localhost:3000](http://localhost:3000) to view the app.
 
 **Need help?** See [SETUP.md](SETUP.md) for detailed instructions and troubleshooting.
+
+## User Profile System
+
+The application includes a comprehensive user profile system for managing accounts and orders.
+
+### Profile Features
+- **Personal Information**: Manage name, email, phone, and address
+- **Order History**: View all past orders with detailed tracking
+- **Account Settings**: Edit profile information with real-time updates
+- **Addresses**: Manage multiple delivery addresses
+- **Security**: Password reset, session management, and account security settings
+
+### Quick Links
+- **Profile Page**: `/profile` - Complete account dashboard
+- **Orders Page**: `/orders` - Order history and tracking
+- **Profile API**: `/api/profile` - REST API for profile operations
+
+For detailed profile system documentation, see:
+- [PROFILE_SYSTEM.md](PROFILE_SYSTEM.md) - Technical documentation
+- [PROFILE_QUICK_START.md](PROFILE_QUICK_START.md) - User guide
+- [PROFILE_IMPLEMENTATION.md](PROFILE_IMPLEMENTATION.md) - Implementation details
 
 ## Database Setup
 
@@ -108,9 +131,14 @@ See [SETUP.md](SETUP.md) for detailed deployment instructions.
 shopeasy/
 ├── app/                    # Next.js app router pages
 │   ├── api/               # API routes
+│   │   ├── products/      # Product endpoints
+│   │   ├── cart/          # Cart endpoints
+│   │   ├── orders/        # Order endpoints
+│   │   └── profile/       # Profile endpoints ✨
 │   ├── cart/              # Shopping cart page
 │   ├── checkout/          # Checkout page
-│   ├── orders/            # Order history
+│   ├── orders/            # Order history page
+│   ├── profile/           # User profile page ✨
 │   ├── login/             # Authentication
 │   └── product/[id]/      # Product details
 ├── components/            # React components
@@ -124,9 +152,12 @@ shopeasy/
 ├── lib/                   # Utilities
 │   ├── supabase/          # Supabase clients
 │   └── types.ts           # TypeScript types
-└── scripts/               # Database scripts
-    ├── 001_create_tables.sql
-    └── 002_seed_products.sql
+├── scripts/               # Database scripts
+│   ├── 001_create_tables.sql
+│   └── 002_seed_products.sql
+├── PROFILE_SYSTEM.md      # Profile system documentation ✨
+├── PROFILE_QUICK_START.md # Profile quick start guide ✨
+└── README.md              # This file
 ```
 
 ## License
