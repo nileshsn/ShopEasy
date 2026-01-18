@@ -3,6 +3,7 @@ import Breadcrum from "@/components/product/breadcrum"
 import ProductDisplay from "@/components/product/product-display"
 import DescriptionBox from "@/components/product/description-box"
 import RelatedProducts from "@/components/product/related-products"
+import Reviews from "@/components/product/reviews"
 import { notFound } from "next/navigation"
 
 export default async function ProductPage({ params }: { params: Promise<{ id: string }> }) {
@@ -20,6 +21,13 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
       <Breadcrum product={product} />
       <ProductDisplay product={product} />
       <DescriptionBox />
+      
+      {/* Reviews Section */}
+      <div className="container mx-auto px-4 py-12">
+        <h2 className="text-2xl font-bold mb-8">Customer Reviews</h2>
+        <Reviews productId={product.id} />
+      </div>
+      
       <RelatedProducts category={product.category} currentProductId={product.id} />
     </div>
   )

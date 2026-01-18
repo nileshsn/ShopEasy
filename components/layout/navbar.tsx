@@ -4,11 +4,12 @@ import { useState, useEffect } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { usePathname, useRouter } from "next/navigation"
-import { ShoppingCart, Menu, X, User, LogOut, Package } from "lucide-react"
+import { ShoppingCart, Menu, X, User, LogOut, Package, Heart } from "lucide-react"
 import { useCart } from "@/components/providers/cart-provider"
 import { Button } from "@/components/ui/button"
 import { createClient } from "@/lib/supabase/client"
 import { useToast } from "@/hooks/use-toast"
+import SearchBar from "@/components/layout/search-bar"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -72,11 +73,16 @@ export default function Navbar() {
   return (
     <nav className="border-b bg-background sticky top-0 z-50">
       <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between h-16">
-          <Link href="/" className="flex items-center gap-2">
+        <div className="flex items-center justify-between h-16 gap-4">
+          <Link href="/" className="flex items-center gap-2 flex-shrink-0">
             <ShoppingCart className="h-8 w-8" />
             <span className="text-xl font-bold">ShopEasy</span>
           </Link>
+
+          {/* Search Bar - Hidden on mobile */}
+          <div className="hidden md:flex flex-1 max-w-md">
+            <SearchBar />
+          </div>
 
           <button className="lg:hidden" onClick={() => setIsOpen(!isOpen)} aria-label="Toggle menu">
             {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
@@ -121,6 +127,12 @@ export default function Navbar() {
                       My Orders
                     </Link>
                   </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/wishlist" className="flex items-center gap-2">
+                      <Heart className="h-4 w-4" />
+                      Wishlist
+                    </Link>
+                  </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleLogout} className="flex items-center gap-2">
                     <LogOut className="h-4 w-4" />
@@ -133,6 +145,11 @@ export default function Navbar() {
                 <Button variant="outline">Login</Button>
               </Link>
             )}
+            <Link href="/wishlist">
+              <Button variant="ghost" size="icon" title="Wishlist">
+                <Heart className="h-5 w-5" />
+              </Button>
+            </Link>
             <Link href="/cart" className="relative">
               <Button variant="ghost" size="icon">
                 <ShoppingCart className="h-5 w-5" />

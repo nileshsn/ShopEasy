@@ -7,6 +7,9 @@ CREATE TABLE IF NOT EXISTS products (
   new_price DECIMAL(10, 2) NOT NULL,
   old_price DECIMAL(10, 2),
   description TEXT,
+  stock INTEGER DEFAULT 100,
+  rating DECIMAL(2,1) DEFAULT 0,
+  review_count INTEGER DEFAULT 0,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -59,6 +62,27 @@ CREATE TABLE IF NOT EXISTS newsletter_subscribers (
   subscribed_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- Create wishlist table
+CREATE TABLE IF NOT EXISTS wishlist (
+  id BIGSERIAL PRIMARY KEY,
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  product_id BIGINT REFERENCES products(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(user_id, product_id)
+);
+
+-- Create reviews table
+CREATE TABLE IF NOT EXISTS reviews (
+  id BIGSERIAL PRIMARY KEY,
+  product_id BIGINT REFERENCES products(id) ON DELETE CASCADE,
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5),
+  comment TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(product_id, user_id)
+);
+
 -- Enable Row Level Security
 ALTER TABLE products ENABLE ROW LEVEL SECURITY;
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
@@ -66,6 +90,8 @@ ALTER TABLE cart_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE orders ENABLE ROW LEVEL SECURITY;
 ALTER TABLE order_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE newsletter_subscribers ENABLE ROW LEVEL SECURITY;
+ALTER TABLE wishlist ENABLE ROW LEVEL SECURITY;
+ALTER TABLE reviews ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policies for products (public read, admin write)
 CREATE POLICY "Anyone can view products" ON products FOR SELECT USING (true);
@@ -91,11 +117,26 @@ CREATE POLICY "Users can view order items for their orders" ON order_items FOR S
 -- RLS Policies for newsletter
 CREATE POLICY "Anyone can subscribe to newsletter" ON newsletter_subscribers FOR INSERT WITH CHECK (true);
 
+-- RLS Policies for wishlist
+CREATE POLICY "Users can view their own wishlist" ON wishlist FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users can add to their own wishlist" ON wishlist FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users can remove from their own wishlist" ON wishlist FOR DELETE USING (auth.uid() = user_id);
+
+-- RLS Policies for reviews
+CREATE POLICY "Anyone can view reviews" ON reviews FOR SELECT USING (true);
+CREATE POLICY "Users can insert their own reviews" ON reviews FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users can update their own reviews" ON reviews FOR UPDATE USING (auth.uid() = user_id);
+CREATE POLICY "Users can delete their own reviews" ON reviews FOR DELETE USING (auth.uid() = user_id);
+
 -- Create indexes for better performance
 CREATE INDEX IF NOT EXISTS idx_products_category ON products(category);
+CREATE INDEX IF NOT EXISTS idx_products_rating ON products(rating);
 CREATE INDEX IF NOT EXISTS idx_cart_items_user_id ON cart_items(user_id);
 CREATE INDEX IF NOT EXISTS idx_orders_user_id ON orders(user_id);
 CREATE INDEX IF NOT EXISTS idx_order_items_order_id ON order_items(order_id);
+CREATE INDEX IF NOT EXISTS idx_wishlist_user_id ON wishlist(user_id);
+CREATE INDEX IF NOT EXISTS idx_reviews_product_id ON reviews(product_id);
+CREATE INDEX IF NOT EXISTS idx_reviews_user_id ON reviews(user_id);
 
 -- Function to automatically create profile on signup
 CREATE OR REPLACE FUNCTION public.handle_new_user()

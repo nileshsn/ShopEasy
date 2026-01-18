@@ -6,6 +6,9 @@ export interface Product {
   new_price: number
   old_price: number | null
   description: string | null
+  stock: number
+  rating: number
+  review_count: number
   created_at?: string
   updated_at?: string
 }
@@ -34,4 +37,22 @@ export interface OrderItem {
   quantity: number
   price: number
   product?: Product
+}
+
+export interface WishlistItem {
+  id: number
+  user_id: string
+  product_id: number
+  product?: Product
+  created_at?: string
+}
+
+export interface Review {
+  id: number
+  product_id: number
+  user_id: string
+  rating: number
+  comment?: string
+  created_at?: string
+  updated_at?: string
 }

@@ -111,13 +111,16 @@ export default function ProductDisplay({ product }: ProductDisplayProps) {
         <div className="space-y-6">
           <h1 className="text-4xl font-bold text-balance">{product.name}</h1>
 
-          <div className="flex items-center gap-2">
-            <div className="flex">
-              {[...Array(5)].map((_, i) => (
-                <Star key={i} className={`h-5 w-5 ${i < 4 ? "fill-yellow-400 text-yellow-400" : "text-gray-300"}`} />
-              ))}
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <div className="flex">
+                {[...Array(5)].map((_, i) => (
+                  <Star key={i} className={`h-5 w-5 ${i < Math.round(product.rating) ? "fill-yellow-400 text-yellow-400" : "text-gray-300"}`} />
+                ))}
+              </div>
+              <span className="font-semibold">{product.rating.toFixed(1)}</span>
+              <span className="text-muted-foreground">({product.review_count} reviews)</span>
             </div>
-            <span className="text-muted-foreground">(122)</span>
           </div>
 
           <div className="flex items-center gap-4">
@@ -125,6 +128,17 @@ export default function ProductDisplay({ product }: ProductDisplayProps) {
             {product.old_price && (
               <span className="text-xl text-muted-foreground line-through">${product.old_price.toFixed(2)}</span>
             )}
+          </div>
+
+          {/* Stock Status */}
+          <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium ${
+            product.stock > 0
+              ? "bg-green-100 text-green-800"
+              : "bg-red-100 text-red-800"
+          }`}>
+            {product.stock > 0
+              ? `✓ In Stock (${product.stock} available)`
+              : "✗ Out of Stock"}
           </div>
 
           <p className="text-muted-foreground leading-relaxed">
@@ -147,8 +161,13 @@ export default function ProductDisplay({ product }: ProductDisplayProps) {
             </div>
           </div>
 
-          <Button onClick={handleAddToCart} disabled={loading} size="lg" className="w-full md:w-auto px-12">
-            {loading ? "Adding..." : "ADD TO CART"}
+          <Button 
+            onClick={handleAddToCart} 
+            disabled={loading || product.stock <= 0} 
+            size="lg" 
+            className="w-full md:w-auto px-12"
+          >
+            {loading ? "Adding..." : product.stock <= 0 ? "OUT OF STOCK" : "ADD TO CART"}
           </Button>
 
           <div className="space-y-2 pt-4 border-t">
