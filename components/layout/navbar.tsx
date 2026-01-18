@@ -110,6 +110,12 @@ export default function Navbar() {
                   <DropdownMenuItem className="text-xs text-muted-foreground">{user.email}</DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem asChild>
+                    <Link href="/profile" className="flex items-center gap-2">
+                      <User className="h-4 w-4" />
+                      My Profile
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
                     <Link href="/orders" className="flex items-center gap-2">
                       <Package className="h-4 w-4" />
                       My Orders
