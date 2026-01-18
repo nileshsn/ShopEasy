@@ -16,7 +16,7 @@ export const metadata: Metadata = {
   description: "Shop the latest fashion trends for men, women, and kids at ShopEasy",
   generator: "v0.app",
   icons: {
-    icon: "/icon.png",
+    icon: "/icon.svg",
   },
 }
 
