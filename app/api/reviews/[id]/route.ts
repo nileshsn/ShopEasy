@@ -11,10 +11,13 @@ export async function GET(
 
     const { data, error } = await supabase
       .from("reviews")
-      .select(
-        `id, rating, comment, created_at,
-         user:user_id ( email )`
-      )
+      .select(`
+        id,
+        rating,
+        comment,
+        created_at,
+        user_email
+      `)
       .eq("product_id", params.id)
       .order("created_at", { ascending: false })
 
