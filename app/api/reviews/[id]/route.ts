@@ -1,39 +1,58 @@
 import { createClient } from "@/lib/supabase/server"
 import { NextRequest, NextResponse } from "next/server"
 
-export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
   try {
-    const { id } = await params
+    const { id } = params
     const supabase = await createClient()
 
-    const { data: reviews, error } = await supabase
+    const { data, error } = await supabase
       .from("reviews")
-      .select("*, user:user_id(email)")
+      .select(`
+        id,
+        rating,
+        comment,
+        created_at,
+        user:user_id (
+          email
+        )
+      `)
       .eq("product_id", id)
       .order("created_at", { ascending: false })
 
-    if (error) throw error
+    if (error) {
+      console.error("Supabase GET error:", error)
+      return NextResponse.json({ error: error.message }, { status: 400 })
+    }
 
-    return NextResponse.json(reviews)
-  } catch (error) {
+    return NextResponse.json(data, { status: 200 })
+  } catch (err) {
+    console.error("GET /reviews error:", err)
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to fetch reviews" },
+      { error: "Internal server error" },
       { status: 500 }
     )
   }
 }
 
-export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function POST(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
   try {
-    const { id } = await params
+    const { id } = params
     const supabase = await createClient()
     const { rating, comment } = await request.json()
 
     const {
       data: { user },
+      error: authError,
     } = await supabase.auth.getUser()
 
-    if (!user) {
+    if (authError || !user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
@@ -41,55 +60,54 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       return NextResponse.json({ error: "Invalid rating (1-5)" }, { status: 400 })
     }
 
+    // Insert or update review
     const { data: review, error } = await supabase
       .from("reviews")
-      .insert([
+      .upsert(
         {
           product_id: id,
           user_id: user.id,
           rating,
           comment: comment || null,
         },
-      ])
+        { onConflict: "product_id,user_id" }
+      )
       .select()
+      .single()
 
     if (error) {
-      if (error.code === "23505") {
-        // Update existing review
-        const { data: updated, error: updateError } = await supabase
-          .from("reviews")
-          .update({ rating, comment })
-          .eq("product_id", id)
-          .eq("user_id", user.id)
-          .select()
-
-        if (updateError) throw updateError
-        return NextResponse.json(updated, { status: 200 })
-      }
-      throw error
+      console.error("Review upsert error:", error)
+      return NextResponse.json({ error: error.message }, { status: 400 })
     }
 
-    // Update product rating
-    const { data: allReviews } = await supabase
+    // Recalculate rating
+    const { data: allReviews, error: fetchError } = await supabase
       .from("reviews")
       .select("rating")
       .eq("product_id", id)
 
-    if (allReviews) {
-      const avgRating = allReviews.reduce((sum, r) => sum + r.rating, 0) / allReviews.length
+    if (!fetchError && allReviews?.length) {
+      const validRatings = allReviews
+        .map(r => r.rating)
+        .filter((r): r is number => typeof r === "number")
+
+      const avg =
+        validRatings.reduce((a, b) => a + b, 0) / validRatings.length
+
       await supabase
         .from("products")
         .update({
-          rating: Math.round(avgRating * 10) / 10,
-          review_count: allReviews.length,
+          rating: Number(avg.toFixed(1)),
+          review_count: validRatings.length,
         })
         .eq("id", id)
     }
 
     return NextResponse.json(review, { status: 201 })
-  } catch (error) {
+  } catch (err) {
+    console.error("POST /reviews error:", err)
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to add review" },
+      { error: "Internal server error" },
       { status: 500 }
     )
   }
