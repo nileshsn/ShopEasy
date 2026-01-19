@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server"
 import { NextRequest, NextResponse } from "next/server"
 
+// ===================== GET REVIEWS =====================
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
@@ -25,12 +26,15 @@ export async function GET(
 
     if (error) {
       console.error("Supabase GET error:", error)
-      return NextResponse.json({ error: error.message }, { status: 400 })
+      return NextResponse.json(
+        { error: error.message },
+        { status: 400 }
+      )
     }
 
-    return NextResponse.json(data, { status: 200 })
+    return NextResponse.json(data ?? [], { status: 200 })
   } catch (err) {
-    console.error("GET /reviews error:", err)
+    console.error("GET /reviews fatal error:", err)
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
@@ -38,6 +42,7 @@ export async function GET(
   }
 }
 
+// ===================== POST REVIEW =====================
 export async function POST(
   request: NextRequest,
   { params }: { params: { id: string } }
@@ -45,7 +50,11 @@ export async function POST(
   try {
     const { id } = params
     const supabase = await createClient()
-    const { rating, comment } = await request.json()
+    const body = await request.json()
+
+    const rating = Number(body.rating)
+    const comment =
+      typeof body.comment === "string" ? body.comment.trim() : null
 
     const {
       data: { user },
@@ -53,59 +62,79 @@ export async function POST(
     } = await supabase.auth.getUser()
 
     if (authError || !user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      )
     }
 
-    if (!rating || rating < 1 || rating > 5) {
-      return NextResponse.json({ error: "Invalid rating (1-5)" }, { status: 400 })
+    if (!Number.isFinite(rating) || rating < 1 || rating > 5) {
+      return NextResponse.json(
+        { error: "Invalid rating (1–5)" },
+        { status: 400 }
+      )
     }
 
-    // Insert or update review
-    const { data: review, error } = await supabase
+    // Insert OR update review (no 409 conflicts)
+    const { data: review, error: upsertError } = await supabase
       .from("reviews")
       .upsert(
         {
           product_id: id,
           user_id: user.id,
           rating,
-          comment: comment || null,
+          comment,
         },
-        { onConflict: "product_id,user_id" }
+        {
+          onConflict: "product_id,user_id",
+        }
       )
       .select()
       .single()
 
-    if (error) {
-      console.error("Review upsert error:", error)
-      return NextResponse.json({ error: error.message }, { status: 400 })
+    if (upsertError) {
+      console.error("Review upsert error:", upsertError)
+      return NextResponse.json(
+        { error: upsertError.message },
+        { status: 400 }
+      )
     }
 
-    // Recalculate rating
+    // Recalculate product rating
     const { data: allReviews, error: fetchError } = await supabase
       .from("reviews")
       .select("rating")
       .eq("product_id", id)
 
-    if (!fetchError && allReviews?.length) {
+    if (fetchError) {
+      console.error("Fetch reviews error:", fetchError)
+    } else if (allReviews && allReviews.length > 0) {
       const validRatings = allReviews
         .map(r => r.rating)
         .filter((r): r is number => typeof r === "number")
 
-      const avg =
-        validRatings.reduce((a, b) => a + b, 0) / validRatings.length
+      if (validRatings.length > 0) {
+        const avg =
+          validRatings.reduce((sum, r) => sum + r, 0) /
+          validRatings.length
 
-      await supabase
-        .from("products")
-        .update({
-          rating: Number(avg.toFixed(1)),
-          review_count: validRatings.length,
-        })
-        .eq("id", id)
+        const { error: updateError } = await supabase
+          .from("products")
+          .update({
+            rating: Number(avg.toFixed(1)),
+            review_count: validRatings.length,
+          })
+          .eq("id", id)
+
+        if (updateError) {
+          console.error("Product update error:", updateError)
+        }
+      }
     }
 
     return NextResponse.json(review, { status: 201 })
   } catch (err) {
-    console.error("POST /reviews error:", err)
+    console.error("POST /reviews fatal error:", err)
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
