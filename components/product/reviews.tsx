@@ -43,49 +43,69 @@ export default function Reviews({ productId }: ReviewsProps) {
   }
 
   const handleSubmitReview = async (e: React.FormEvent) => {
-    e.preventDefault()
+  e.preventDefault()
 
-    try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
+  if (submitting) return
 
-      if (!user) {
-        toast({
-          title: "Please login",
-          description: "You need to be logged in to leave a review",
-        })
-        return
-      }
+  try {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
 
-      setSubmitting(true)
-      const response = await fetch(`/api/reviews/${productId}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ rating, comment }),
-      })
-
-      if (!response.ok) throw new Error("Failed to submit review")
-
-      setComment("")
-      setRating(5)
-      await fetchReviews()
+    if (!user) {
       toast({
-        title: "Review submitted",
-        description: "Thank you for your feedback!",
+        title: "Please login",
+        description: "You need to be logged in to leave a review",
       })
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to submit review",
-        variant: "destructive",
-      })
-    } finally {
-      setSubmitting(false)
+      return
     }
-  }
 
-  const avgRating = reviews.length > 0 ? (reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length).toFixed(1) : "0"
+    setSubmitting(true)
+
+    const response = await fetch(`/api/reviews/${productId}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        rating: Number(rating), // 🔥 force number
+        comment,
+      }),
+    })
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      throw new Error(data.error || "Failed to submit review")
+    }
+
+    setComment("")
+    setRating(5)
+    await fetchReviews()
+
+    toast({
+      title: "Review submitted",
+      description: "Thank you for your feedback!",
+    })
+  } catch (error: any) {
+    toast({
+      title: "Error",
+      description: error.message || "Failed to submit review",
+      variant: "destructive",
+    })
+  } finally {
+    setSubmitting(false)
+  }
+}
+
+
+const avgRating =
+  reviews.length > 0
+    ? (
+        reviews.reduce((sum, r) => sum + Number(r.rating), 0) /
+        reviews.length
+      ).toFixed(1)
+    : "0.0"
 
   return (
     <div className="space-y-8">
