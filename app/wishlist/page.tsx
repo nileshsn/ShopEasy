@@ -9,11 +9,14 @@ import { useToast } from "@/hooks/use-toast"
 import type { WishlistItem } from "@/lib/types"
 import Image from "next/image"
 import Link from "next/link"
-import { Heart, ShoppingCart, X } from "lucide-react"
+import { Heart, ShoppingCart, X, ChevronLeft, ChevronRight } from "lucide-react"
+
+const ITEMS_PER_PAGE = 12
 
 export default function WishlistPage() {
   const [wishlist, setWishlist] = useState<WishlistItem[]>([])
   const [loading, setLoading] = useState(true)
+  const [currentPage, setCurrentPage] = useState(1)
   const router = useRouter()
   const supabase = createClient()
   const { toast } = useToast()
@@ -144,14 +147,21 @@ export default function WishlistPage() {
     )
   }
 
+  // Pagination calculations
+  const totalPages = Math.ceil(wishlist.length / ITEMS_PER_PAGE)
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE
+  const endIndex = startIndex + ITEMS_PER_PAGE
+  const paginatedWishlist = wishlist.slice(startIndex, endIndex)
+
   return (
     <div className="min-h-screen bg-background py-8">
       <div className="container mx-auto px-4">
         <h1 className="text-3xl font-bold mb-2">My Wishlist</h1>
         <p className="text-muted-foreground mb-8">{wishlist.length} items saved</p>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {wishlist.map((item) => (
+        {/* Products Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
+          {paginatedWishlist.map((item) => (
             <Card key={item.id} className="overflow-hidden hover:shadow-lg transition-shadow">
               <div className="relative aspect-square overflow-hidden bg-muted group">
                 {item.product && (
@@ -205,6 +215,55 @@ export default function WishlistPage() {
             </Card>
           ))}
         </div>
+
+        {/* Pagination Controls */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-center gap-4 mt-12">
+            <button
+              onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+              disabled={currentPage === 1}
+              className="flex items-center gap-2 px-4 py-2 border rounded-lg hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              <ChevronLeft className="h-4 w-4" />
+              <span>Previous</span>
+            </button>
+
+            <div className="flex items-center gap-2">
+              {[...Array(totalPages)].map((_, i) => {
+                const page = i + 1
+                return (
+                  <button
+                    key={page}
+                    onClick={() => setCurrentPage(page)}
+                    className={`w-10 h-10 rounded-lg font-medium transition-colors ${
+                      currentPage === page
+                        ? "bg-primary text-primary-foreground"
+                        : "border hover:bg-muted"
+                    }`}
+                  >
+                    {page}
+                  </button>
+                )
+              })}
+            </div>
+
+            <button
+              onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+              disabled={currentPage === totalPages}
+              className="flex items-center gap-2 px-4 py-2 border rounded-lg hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              <span>Next</span>
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          </div>
+        )}
+
+        {/* Page Info */}
+        {totalPages > 0 && (
+          <p className="text-center text-sm text-muted-foreground mt-6">
+            Showing {startIndex + 1}-{Math.min(endIndex, wishlist.length)} of {wishlist.length} items (Page {currentPage} of {totalPages})
+          </p>
+        )}
       </div>
     </div>
   )

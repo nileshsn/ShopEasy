@@ -2,7 +2,7 @@ import { createClient } from "@/lib/supabase/server"
 import Breadcrum from "@/components/product/breadcrum"
 import ProductDisplay from "@/components/product/product-display"
 import DescriptionBox from "@/components/product/description-box"
-import RelatedProducts from "@/components/product/related-products"
+import RecommendedProducts from "@/components/product/recommended-products"
 import Reviews from "@/components/product/reviews"
 import { notFound } from "next/navigation"
 
@@ -28,7 +28,8 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
         <Reviews productId={product.id} />
       </div>
       
-      <RelatedProducts category={product.category} currentProductId={product.id} />
+      {/* Recommended Products */}
+      <RecommendedProducts category={product.category} currentProductId={product.id} limit={4} />
     </div>
   )
 }

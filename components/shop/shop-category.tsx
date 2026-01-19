@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import { createClient } from "@/lib/supabase/client"
 import Image from "next/image"
 import ProductItem from "@/components/shop/product-item"
-import { ChevronDown, SlidersHorizontal, X } from "lucide-react"
+import { ChevronDown, SlidersHorizontal, ChevronLeft, ChevronRight } from "lucide-react"
 import { Card } from "@/components/ui/card"
 import type { Product } from "@/lib/types"
 
@@ -13,11 +13,14 @@ interface ShopCategoryProps {
   banner: string
 }
 
+const ITEMS_PER_PAGE = 12
+
 export default function ShopCategory({ category, banner }: ShopCategoryProps) {
   const supabase = createClient()
-  const [products, setProducts] = useState<Product[]>([])
+  const [allProducts, setAllProducts] = useState<Product[]>([])
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
+  const [currentPage, setCurrentPage] = useState(1)
   
   // Filters
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 500])
@@ -38,17 +41,18 @@ export default function ShopCategory({ category, banner }: ShopCategoryProps) {
         .order("id")
 
       if (!error && data) {
-        setProducts(data)
+        setAllProducts(data)
       }
       setLoading(false)
     }
 
     fetchProducts()
+    setCurrentPage(1) // Reset to first page when filters change
   }, [category, priceRange, supabase])
 
   // Apply filters and sorting
   useEffect(() => {
-    let result = [...products]
+    let result = [...allProducts]
 
     // Filter by rating
     if (selectedRating) {
@@ -73,12 +77,20 @@ export default function ShopCategory({ category, banner }: ShopCategoryProps) {
     }
 
     setFilteredProducts(result)
-  }, [products, selectedRating, sortBy])
+    setCurrentPage(1) // Reset to first page when filters change
+  }, [allProducts, selectedRating, sortBy])
+
+  // Pagination
+  const totalPages = Math.ceil(filteredProducts.length / ITEMS_PER_PAGE)
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE
+  const endIndex = startIndex + ITEMS_PER_PAGE
+  const paginatedProducts = filteredProducts.slice(startIndex, endIndex)
 
   const resetFilters = () => {
     setPriceRange([0, 500])
     setSelectedRating(null)
     setSortBy("newest")
+    setCurrentPage(1)
   }
 
   return (
@@ -198,11 +210,60 @@ export default function ShopCategory({ category, banner }: ShopCategoryProps) {
               </button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {filteredProducts.map((product) => (
-                <ProductItem key={product.id} product={product} />
-              ))}
-            </div>
+            <>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
+                {paginatedProducts.map((product) => (
+                  <ProductItem key={product.id} product={product} />
+                ))}
+              </div>
+
+              {/* Pagination Controls */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-center gap-4 mt-12">
+                  <button
+                    onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                    disabled={currentPage === 1}
+                    className="flex items-center gap-2 px-4 py-2 border rounded-lg hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                    <span>Previous</span>
+                  </button>
+
+                  <div className="flex items-center gap-2">
+                    {[...Array(totalPages)].map((_, i) => {
+                      const page = i + 1
+                      return (
+                        <button
+                          key={page}
+                          onClick={() => setCurrentPage(page)}
+                          className={`w-10 h-10 rounded-lg font-medium transition-colors ${
+                            currentPage === page
+                              ? "bg-primary text-primary-foreground"
+                              : "border hover:bg-muted"
+                          }`}
+                        >
+                          {page}
+                        </button>
+                      )
+                    })}
+                  </div>
+
+                  <button
+                    onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                    disabled={currentPage === totalPages}
+                    className="flex items-center gap-2 px-4 py-2 border rounded-lg hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    <span>Next</span>
+                    <ChevronRight className="h-4 w-4" />
+                  </button>
+                </div>
+              )}
+
+              {/* Page Info */}
+              <p className="text-center text-sm text-muted-foreground mt-6">
+                Showing {startIndex + 1}-{Math.min(endIndex, filteredProducts.length)} of {filteredProducts.length} products (Page {currentPage} of {totalPages})
+              </p>
+            </>
           )}
         </div>
       </div>

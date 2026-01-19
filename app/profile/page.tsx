@@ -2,11 +2,13 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
+import Image from "next/image"
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { useToast } from "@/hooks/use-toast"
-import { User, Settings, LogOut, Heart, MapPin, Shield, Package } from "lucide-react"
+import { User, Settings, LogOut, Heart, MapPin, Shield, Package, ShoppingCart, X } from "lucide-react"
 
 export default function ProfilePage() {
   const [user, setUser] = useState<any>(null)
@@ -121,6 +123,17 @@ export default function ProfilePage() {
                   Overview
                 </button>
                 <button
+                  onClick={() => setActiveTab("wishlist")}
+                  className={`w-full text-left px-4 py-2 rounded-md transition ${
+                    activeTab === "wishlist"
+                      ? "bg-primary text-primary-foreground"
+                      : "hover:bg-muted"
+                  }`}
+                >
+                  <Heart className="inline-block w-4 h-4 mr-2" />
+                  Wishlist
+                </button>
+                <button
                   onClick={() => setActiveTab("settings")}
                   className={`w-full text-left px-4 py-2 rounded-md transition ${
                     activeTab === "settings"
@@ -169,6 +182,7 @@ export default function ProfilePage() {
           {/* Main Content */}
           <div className="md:col-span-3">
             {activeTab === "overview" && <OverviewTab profile={profile} user={user} />}
+            {activeTab === "wishlist" && <WishlistTab user={user} />}
             {activeTab === "settings" && <SettingsTab profile={profile} user={user} />}
             {activeTab === "addresses" && <AddressesTab user={user} />}
             {activeTab === "security" && <SecurityTab user={user} />}
@@ -432,6 +446,182 @@ function SecurityTab({ user }: any) {
           <Button variant="destructive" disabled>
             Delete Account
           </Button>
+        </div>
+      </Card>
+    </div>
+  )
+}
+// Wishlist Tab
+function WishlistTab({ user }: any) {
+  const [wishlist, setWishlist] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const supabase = createClient()
+  const { toast } = useToast()
+
+  useEffect(() => {
+    const fetchWishlist = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("wishlist")
+          .select("*, product:product_id(*)")
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: false })
+
+        if (error) throw error
+        setWishlist(data || [])
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "Failed to load wishlist",
+          variant: "destructive",
+        })
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchWishlist()
+  }, [user.id, supabase, toast])
+
+  const handleRemove = async (product_id: number) => {
+    try {
+      const { error } = await supabase
+        .from("wishlist")
+        .delete()
+        .eq("product_id", product_id)
+        .eq("user_id", user.id)
+
+      if (error) throw error
+      setWishlist((prev) => prev.filter((item) => item.product_id !== product_id))
+      toast({
+        title: "Removed",
+        description: "Item removed from wishlist",
+      })
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to remove item",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const handleAddToCart = async (product_id: number) => {
+    try {
+      const { error } = await supabase.from("cart_items").insert([
+        {
+          product_id,
+          user_id: user.id,
+          quantity: 1,
+        },
+      ])
+
+      if (error && error.code !== "23505") throw error
+
+      if (error?.code === "23505") {
+        const { error: updateError } = await supabase
+          .from("cart_items")
+          .update({ quantity: 1 })
+          .eq("product_id", product_id)
+          .eq("user_id", user.id)
+
+        if (updateError) throw updateError
+      }
+
+      toast({
+        title: "Added to cart",
+        description: "Item added to your cart",
+      })
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to add to cart",
+        variant: "destructive",
+      })
+    }
+  }
+
+  if (loading) {
+    return (
+      <Card className="p-12 text-center">
+        <p className="text-muted-foreground">Loading wishlist...</p>
+      </Card>
+    )
+  }
+
+  if (wishlist.length === 0) {
+    return (
+      <Card className="p-12 text-center">
+        <Heart className="h-16 w-16 text-muted-foreground mx-auto mb-4 opacity-50" />
+        <h3 className="text-xl font-semibold mb-2">Your Wishlist is Empty</h3>
+        <p className="text-muted-foreground mb-6">Start adding items you love!</p>
+        <Link href="/">
+          <Button>Continue Shopping</Button>
+        </Link>
+      </Card>
+    )
+  }
+
+  return (
+    <div className="space-y-6">
+      <Card className="p-6">
+        <h3 className="text-lg font-semibold mb-4">{wishlist.length} Saved Items</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {wishlist.map((item) => (
+            <Card key={item.id} className="overflow-hidden hover:shadow-lg transition-shadow">
+              <div className="relative aspect-square overflow-hidden bg-muted group">
+                {item.product && (
+                  <>
+                    <Image
+                      src={item.product.image_url || "/placeholder.svg"}
+                      alt={item.product.name}
+                      fill
+                      className="object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                      <Link href={`/product/${item.product.id}`}>
+                        <Button size="sm" variant="secondary">
+                          View
+                        </Button>
+                      </Link>
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        onClick={() => handleAddToCart(item.product_id)}
+                      >
+                        <ShoppingCart className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={() => handleRemove(item.product_id)}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </>
+                )}
+              </div>
+
+              <div className="p-4">
+                {item.product && (
+                  <>
+                    <Link href={`/product/${item.product.id}`}>
+                      <h4 className="font-medium line-clamp-2 mb-2 hover:text-primary transition-colors">{item.product.name}</h4>
+                    </Link>
+                    <div className="flex items-center justify-between">
+                      <span className="text-lg font-bold">${item.product.new_price.toFixed(2)}</span>
+                      {item.product.rating > 0 && (
+                        <span className="text-xs font-semibold flex items-center gap-1">
+                          ★ {item.product.rating.toFixed(1)}
+                        </span>
+                      )}
+                    </div>
+                  </>
+                )}
+              </div>
+            </Card>
+          ))}
         </div>
       </Card>
     </div>
