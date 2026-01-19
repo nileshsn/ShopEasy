@@ -226,17 +226,3 @@ export default function CartItems({ initialCartItems }: CartItemsProps) {
     </div>
   )
 }
-
-              <input
-                type="text"
-                placeholder="Promo code"
-                className="flex-1 px-3 py-2 border rounded-md bg-background"
-              />
-              <Button variant="outline">Submit</Button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
