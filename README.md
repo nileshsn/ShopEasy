@@ -76,11 +76,6 @@ The application includes a comprehensive user profile system for managing accoun
 - **Orders Page**: `/orders` - Order history and tracking
 - **Profile API**: `/api/profile` - REST API for profile operations
 
-For detailed profile system documentation, see:
-- [PROFILE_SYSTEM.md](PROFILE_SYSTEM.md) - Technical documentation
-- [PROFILE_QUICK_START.md](PROFILE_QUICK_START.md) - User guide
-- [PROFILE_IMPLEMENTATION.md](PROFILE_IMPLEMENTATION.md) - Implementation details
-
 ## Database Setup
 
 1. Run the SQL scripts in the `scripts/` folder in order:
@@ -124,41 +119,6 @@ Open [http://localhost:3000](http://localhost:3000) to view the app.
 5. Deploy!
 
 See [SETUP.md](SETUP.md) for detailed deployment instructions.
-
-## Project Structure
-
-```
-shopeasy/
-├── app/                    # Next.js app router pages
-│   ├── api/               # API routes
-│   │   ├── products/      # Product endpoints
-│   │   ├── cart/          # Cart endpoints
-│   │   ├── orders/        # Order endpoints
-│   │   └── profile/       # Profile endpoints ✨
-│   ├── cart/              # Shopping cart page
-│   ├── checkout/          # Checkout page
-│   ├── orders/            # Order history page
-│   ├── profile/           # User profile page ✨
-│   ├── login/             # Authentication
-│   └── product/[id]/      # Product details
-├── components/            # React components
-│   ├── auth/              # Auth forms
-│   ├── cart/              # Cart components
-│   ├── checkout/          # Checkout form
-│   ├── layout/            # Navbar, footer
-│   ├── orders/            # Order list
-│   ├── product/           # Product display
-│   └── shop/              # Shop components
-├── lib/                   # Utilities
-│   ├── supabase/          # Supabase clients
-│   └── types.ts           # TypeScript types
-├── scripts/               # Database scripts
-│   ├── 001_create_tables.sql
-│   └── 002_seed_products.sql
-├── PROFILE_SYSTEM.md      # Profile system documentation ✨
-├── PROFILE_QUICK_START.md # Profile quick start guide ✨
-└── README.md              # This file
-```
 
 ## License
 
