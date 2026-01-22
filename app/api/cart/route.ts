@@ -41,12 +41,16 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
-  const { data: existingItem } = await supabase
+  const { data: existingItem, error: existingError } = await supabase
     .from("cart_items")
     .select("*")
     .eq("user_id", user.id)
     .eq("product_id", product_id)
-    .single()
+    .maybeSingle()
+
+  if (existingError) {
+    return NextResponse.json({ error: existingError.message }, { status: 500 })
+  }
 
   if (existingItem) {
     const { error } = await supabase

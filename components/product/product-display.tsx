@@ -40,12 +40,14 @@ export default function ProductDisplay({ product }: ProductDisplayProps) {
     }
 
     try {
-      const { data: existingItem } = await supabase
+      const { data: existingItem, error: existingError } = await supabase
         .from("cart_items")
         .select("*")
         .eq("user_id", user.id)
         .eq("product_id", product.id)
-        .single()
+        .maybeSingle()
+
+      if (existingError) throw existingError
 
       if (existingItem) {
         const { error } = await supabase
