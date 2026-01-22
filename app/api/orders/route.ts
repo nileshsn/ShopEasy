@@ -31,7 +31,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Cart is empty" }, { status: 400 })
   }
 
-  const total_amount = cartItems.reduce((sum, item) => sum + item.product.new_price * item.quantity, 0) + 5.0
+  const subtotal = cartItems.reduce((sum, item) => sum + item.product.new_price * item.quantity, 0)
+  const shipping = subtotal >= 50 ? 0 : 5
+  const total_amount = subtotal + shipping
 
   const { data: order, error: orderError } = await supabase
     .from("orders")

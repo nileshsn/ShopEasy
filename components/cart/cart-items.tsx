@@ -80,7 +80,7 @@ export default function CartItems({ initialCartItems }: CartItemsProps) {
   }
 
   const subtotal = cartItems.reduce((sum, item) => sum + item.product.new_price * item.quantity, 0)
-  const shipping = subtotal > 0 ? 5.0 : 0
+  const shipping = subtotal >= 50 ? 0 : subtotal > 0 ? 5 : 0
   const total = subtotal + shipping
 
   if (cartItems.length === 0) {
@@ -176,12 +176,8 @@ export default function CartItems({ initialCartItems }: CartItemsProps) {
 
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Shipping</span>
-                {subtotal > 0 ? (
-                  <>
-                    <span className="font-semibold text-green-600">
-                      Free (over $50)
-                    </span>
-                  </>
+                {shipping === 0 ? (
+                  <span className="font-semibold text-green-600">Free (over $50)</span>
                 ) : (
                   <span className="font-semibold">${shipping.toFixed(2)}</span>
                 )}

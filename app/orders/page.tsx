@@ -134,14 +134,18 @@ export default function OrdersPage() {
           </Card>
         ) : (
           <div className="space-y-4">
-            {orders.map((order) => (
+            {orders.map((order) => {
+              const orderId = String(order.id || "")
+              const orderItems = order.order_items ?? []
+
+              return (
               <Card key={order.id} className="overflow-hidden hover:shadow-lg transition-shadow">
                 <div className="p-6">
                   {/* Order Header */}
                   <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6 pb-6 border-b">
                     <div>
                       <p className="text-sm text-muted-foreground">Order ID</p>
-                      <p className="font-mono font-semibold">{order.id.slice(0, 8).toUpperCase()}</p>
+                      <p className="font-mono font-semibold">{orderId.slice(0, 8).toUpperCase()}</p>
                     </div>
                     <div>
                       <p className="text-sm text-muted-foreground">Order Date</p>
@@ -181,7 +185,7 @@ export default function OrdersPage() {
                   <div className="mb-6">
                     <h4 className="font-semibold mb-3">Order Items</h4>
                     <div className="space-y-3">
-                      {order.order_items.map((item) => (
+                      {orderItems.map((item) => (
                         <div
                           key={item.id}
                           className="flex gap-4 p-4 bg-muted rounded-lg"
@@ -226,12 +230,17 @@ export default function OrdersPage() {
                   </div>
                 </div>
               </Card>
-            ))}
+              )
+            })}
           </div>
         )}
 
         {/* Order Details Modal */}
         {selectedOrder && (
+          (() => {
+            const selectedOrderId = String(selectedOrder.id || "")
+            const selectedOrderItems = selectedOrder.order_items ?? []
+            return (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
             <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
               <div className="p-8">
@@ -251,7 +260,7 @@ export default function OrdersPage() {
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <p className="text-sm text-muted-foreground">Order ID</p>
-                      <p className="font-mono font-semibold">{selectedOrder.id}</p>
+                      <p className="font-mono font-semibold">{selectedOrderId}</p>
                     </div>
                     <div>
                       <p className="text-sm text-muted-foreground">Order Date</p>
@@ -281,7 +290,7 @@ export default function OrdersPage() {
                   <div className="border-t pt-6">
                     <h3 className="font-semibold mb-4">Items</h3>
                     <div className="space-y-4">
-                      {selectedOrder.order_items.map((item) => (
+                      {selectedOrderItems.map((item) => (
                         <div
                           key={item.id}
                           className="flex gap-4 p-4 bg-muted rounded"
@@ -375,6 +384,8 @@ export default function OrdersPage() {
               </div>
             </Card>
           </div>
+            )
+          })()
         )}
       </div>
     </div>

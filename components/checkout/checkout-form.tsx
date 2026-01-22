@@ -33,7 +33,7 @@ export default function CheckoutForm({ cartItems }: CheckoutFormProps) {
   const { refreshCart } = useCart()
 
   const subtotal = cartItems.reduce((sum, item) => sum + item.product.new_price * item.quantity, 0)
-  const shipping = 5.0
+  const shipping = subtotal >= 50 ? 0 : 5
   const total = subtotal + shipping
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -215,7 +215,7 @@ export default function CheckoutForm({ cartItems }: CheckoutFormProps) {
 
             <div className="flex justify-between">
               <span className="text-muted-foreground">Shipping</span>
-              <span className="font-semibold">${shipping.toFixed(2)}</span>
+              <span className="font-semibold">{shipping === 0 ? "Free (over $50)" : `$${shipping.toFixed(2)}`}</span>
             </div>
 
             <div className="flex justify-between text-lg font-bold pt-2 border-t">
